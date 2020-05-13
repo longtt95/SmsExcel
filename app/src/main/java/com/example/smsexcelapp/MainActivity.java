@@ -1,11 +1,13 @@
 package com.example.smsexcelapp;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -68,13 +70,17 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case 10:
                 if (resultCode == RESULT_OK) {
-                    String path = data.getData().getPath();
+                    Uri uri = data.getData();
+                    //String path = data.getData().getPath();
+                    String path = uri.getPath();
+                    path = path.substring(path.indexOf(":") + 1);
+                    Toast.makeText(this, path, Toast.LENGTH_SHORT).show();
                     txt_filePicker.setText(path);
                     WorkbookSettings ws = new WorkbookSettings();
                     ws.setGCDisabled(true);
                     File file = new File(path);
                     if (file != null) {
-                        wait.setVisibility(View.GONE);
+                        wait.setVisibility(View.VISIBLE);
                         progressBar.setVisibility(View.GONE);
                         try {
                             workbook = Workbook.getWorkbook(file);
@@ -88,8 +94,10 @@ public class MainActivity extends AppCompatActivity {
                             }
                             showData();
                         } catch (IOException e) {
+                            Toast.makeText(this, "Loi khong doc duoc file 1", Toast.LENGTH_SHORT).show();
                             e.printStackTrace();
                         } catch (BiffException e) {
+                            Toast.makeText(this, "Loi khong doc duoc file 2", Toast.LENGTH_SHORT).show();
                             e.printStackTrace();
                         }
                     } else {
@@ -104,5 +112,10 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new Adapter(this,storyPhoneNumber,storyContent);
         recyclerView.setAdapter(adapter);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+
     }
 }
