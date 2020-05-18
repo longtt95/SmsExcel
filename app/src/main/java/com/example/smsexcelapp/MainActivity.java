@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
     Intent myFileIntent;
     TextView wait;
     RecyclerView recyclerView;
-    List<String> storyPhoneNumber, storyContent;
+    List<String> storyPhoneNumber, storyContent, storyAddress, storyTime;
     final int SEND_SMS_PERMISSION_REQUEST_CODE = 1;
     String jsonString = "[{'phoneNumber': '0888717267', 'content': 'Test'}, {'phoneNumber': '0888078898', 'content': 'Test'}]";
     JSONArray jsonArray = new JSONArray();
@@ -88,6 +88,8 @@ public class MainActivity extends AppCompatActivity {
 
         storyPhoneNumber = new ArrayList<>();
         storyContent = new ArrayList<>();
+        storyAddress = new ArrayList<>();
+        storyTime = new ArrayList<>();
         send = PendingIntent.getBroadcast(this, 0,
                 new Intent(sendingSmsStatus), 0);
         delivered = PendingIntent.getBroadcast(this, 0, new Intent(
@@ -123,25 +125,30 @@ public class MainActivity extends AppCompatActivity {
                         JSONObject explrObject = jsonArray.getJSONObject(i);
                         if (checkPermission(Manifest.permission.SEND_SMS) && Patterns.PHONE.matcher(explrObject.getString("phoneNumber")).matches() == true) {
                             SmsManager smsManager = SmsManager.getDefault();
-                            smsManager.sendTextMessage(explrObject.getString("phoneNumber"), null, "TTDVVL moi ong/ba Nguyen Le Ton Nu Hien Trang den Hoa Do 6, Cam Phuc Bac, Cam Ranh  luc 17h15 ngay 18/05/2020 nhan ket qua TCTN. Khi di mang theo CMND va so", send, delivered);
-                            ArrayList<String> parts = smsManager.divideMessage(explrObject.getString("content"));
-//                            int numParts = parts.size();
-//
-//                            if (numParts < 2) {
-//                                smsManager.sendTextMessage(explrObject.getString("phoneNumber"), null, explrObject.getString("content"), send, delivered);
-//                            } else {
-//                                smsManager.sendMultipartTextMessage(explrObject.getString("phoneNumber"), null, parts, null, null);
-//                            }
 
+                            String stringPhoneNumber =  explrObject.getString("phoneNumber");
+                            String stringName =  explrObject.getString("name");
+                            String stringContent =  explrObject.getString("content");
+                            String stringTime =  explrObject.getString("dateTime");
+
+                            if (stringContent.length() <= 159) {
+                                smsManager.sendTextMessage(stringPhoneNumber, null, stringContent, send, delivered);
+                            } else {
+                                ArrayList<String> parts = smsManager.divideMessage(stringContent);
+                                int numParts = parts.size();
+                                smsManager.sendMultipartTextMessage(stringPhoneNumber, null, parts, null, null);
+                            }
+                            Toast.makeText(MainActivity.this, "Đã gửi tin nhắn " + i + " thành công!", Toast.LENGTH_SHORT).show();
+                            Thread.sleep(20000);
                         } else {
                             Toast.makeText(MainActivity.this, "Permission Denined!", Toast.LENGTH_SHORT).show();
                         }
                     }
-                    //Toast.makeText(MainActivity.this, "Đã gửi tin nhắn thành công!", Toast.LENGTH_SHORT).show();
                     btnSend.setEnabled(false);
                     wait.setVisibility(View.GONE);
                     progressBar.setVisibility(View.GONE);
-                } catch (JSONException e) {
+                } catch (JSONException | InterruptedException e) {
+                    Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
                     e.printStackTrace();
                 }
             }
@@ -159,7 +166,8 @@ public class MainActivity extends AppCompatActivity {
                     String path = uri.getPath();
                     String urlPath = Environment.getExternalStorageDirectory().toString();
                     if (urlPath.charAt(urlPath.length() - 1) == '/') {
-                        path =urlPath + path.substring(path.indexOf(":") + 1);
+                        path
+                                =urlPath + path.substring(path.indexOf(":") + 1);
                     } else {
                         path = urlPath + "/" + path.substring(path.indexOf(":") + 1);
                     }
@@ -178,19 +186,39 @@ public class MainActivity extends AppCompatActivity {
                             //text.setText(row[0].getContents());
                             storyPhoneNumber.clear();
                             storyContent.clear();
+                            storyAddress.clear();
+                            storyTime.clear();
                             for (int i = 0; i < sheet.getRows(); i++) {
                                 Cell[] row = sheet.getRow(i);
-                                if (Patterns.PHONE.matcher(row[0].getContents()).matches() == true) {
+                                if (Patterns.PHONE.matcher(row[3].getContents()).matches() == true) {
                                     JSONObject jsonObject = new JSONObject();
-                                    jsonObject.put("phoneNumber", row[0].getContents());
-                                    jsonObject.put("content", row[1].getContents());
+                                    jsonObject.put("phoneNumber", row[3].getContents());
+                                    jsonObject.put("address", row[2].getContents());
+                                    jsonObject.put("dateTime", row[4].getContents());
+
+                                    String checkContent = "TTDVVL moi ong(ba) " + row[1].getContents() + " den " + row[2].getContents() + " luc " + row[4].getContents() + " nhan ket qua TCTN. Khi di mang theo CMND va so BHXH ban goc";
+                                    if (checkContent.length() > 159) {
+                                        checkContent = "TTDVVL moi ong(ba) " + firstLetterWordAndFullLastWord(row[1].getContents()) + " den " + row[2].getContents() + " luc " + row[4].getContents() + " nhan ket qua TCTN. Khi di mang theo CMND va so BHXH ban goc";
+                                        if (checkContent.length() > 159) {
+                                            jsonObject.put("name", row[1].getContents());
+                                            jsonObject.put("content", checkContent.replace("/", "-"));
+                                        } else {
+                                            jsonObject.put("name", row[1].getContents());
+                                            jsonObject.put("content", checkContent.replace("/", "-"));
+                                        }
+                                    } else {
+                                        jsonObject.put("name", row[1].getContents());
+                                        jsonObject.put("content", checkContent.replace("/", "-"));
+                                    }
                                     jsonArray.put(jsonObject);
-                                    storyPhoneNumber.add(row[0].getContents());
+                                    storyPhoneNumber.add(row[3].getContents());
                                     //unicodeString is the expected output in unicode
                                     String unicodeString = getUnicodeString(escapeUnicodeText(row[0].getContents()));
                                     //i want to make small u into Capital from unicode String
                                     String resultUnicode = unicodeString.replace("\\u", "\\U");
-                                    storyContent.add(row[1].getContents().replace("\\u", "\\U"));
+                                    storyContent.add(checkContent.replace("\\u", "\\U").replace("/", "-"));
+                                    storyAddress.add(row[2].getContents().replace("\\u", "\\U"));
+                                    storyTime.add(row[4].getContents().replace("\\u", "\\U"));
                                 }
                             }
                             showData();
@@ -235,10 +263,10 @@ public class MainActivity extends AppCompatActivity {
                 switch(getResultCode())
                 {
                     case Activity.RESULT_OK:
-                        Toast.makeText(getBaseContext(), "Sms Sent Successfully", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getBaseContext(), "Tin nhắn đã được gửi", Toast.LENGTH_LONG).show();
                         break;
                     case SmsManager.RESULT_ERROR_NO_SERVICE:
-                        Toast.makeText(getBaseContext(), "No Service Found in your Device", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getBaseContext(), "Không có dịch vụ nhắn tin trên điện thoại", Toast.LENGTH_LONG).show();
                         break;
                 }
 
@@ -251,10 +279,10 @@ public class MainActivity extends AppCompatActivity {
                 switch(getResultCode())
                 {
                     case Activity.RESULT_OK:
-                        Toast.makeText(getBaseContext(), "Sms Successfully Delivered", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getBaseContext(), "Tin nhắn đã được chuyển đi", Toast.LENGTH_LONG).show();
                         break;
                     case Activity.RESULT_CANCELED:
-                        Toast.makeText(getBaseContext(), "Sms not Delivered", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getBaseContext(), "Lỗi tin nhắn không thể chuyển", Toast.LENGTH_LONG).show();
                         break;
                 }
 
@@ -275,7 +303,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void showData() {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new Adapter(this, storyPhoneNumber, storyContent);
+        adapter = new Adapter(this, storyPhoneNumber, storyContent, storyAddress, storyTime);
         recyclerView.setAdapter(adapter);
     }
 
@@ -325,5 +353,35 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         return text;
+    }
+
+    // character of each word.
+    public String firstLetterWordAndFullLastWord(String str)
+    {
+        String result = "";
+
+        // Traverse the string.
+        boolean v = true;
+        for (int i = 0; i < str.length(); i++)
+        {
+            // If it is space, set v as true.
+            if (str.charAt(i) == ' ' && str.lastIndexOf(" ") != i)
+            {
+                v = true;
+            }
+
+            // Else check if v is true or not.
+            // If true, copy character in output
+            // string and set v as false.
+            else if (str.charAt(i) != ' ' && v == true)
+            {
+                result += (str.charAt(i));
+                result += '.';
+                v = false;
+            }
+        }
+        result += str.substring(str.lastIndexOf(" ") + 1);
+
+        return result;
     }
 }

@@ -14,12 +14,14 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
-    private List<String> phoneNumbers, contents;
+    private List<String> phoneNumbers, contents, addresss, times;
     private LayoutInflater inflater;
 
-    Adapter(Context context, List<String> phoneNumbers, List<String> contents){
+    Adapter(Context context, List<String> phoneNumbers, List<String> contents, List<String> addresss, List<String> times){
         this.phoneNumbers = phoneNumbers;
         this.contents = contents;
+        this.addresss = addresss;
+        this.times = times;
         this.inflater = LayoutInflater.from(context);
     }
 
@@ -34,8 +36,12 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         String phone_number = phoneNumbers.get(position);
         String content = contents.get(position);
+        String address = addresss.get(position);
+        String time = times.get(position);
         holder.phone_number.setText(phone_number);
         holder.content.setText(content);
+        holder.address.setText(address);
+        holder.time.setText(time);
 
     }
 
@@ -45,11 +51,13 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-        TextView phone_number, content;
+        TextView phone_number, content, address, time;
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             phone_number = itemView.findViewById(R.id.txt_phone_number);
             content = itemView.findViewById(R.id.txt_content);
+            address = itemView.findViewById(R.id.txt_address);
+            time = itemView.findViewById(R.id.txt_time);
         }
     }
 }
