@@ -139,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
                                 smsManager.sendMultipartTextMessage(stringPhoneNumber, null, parts, null, null);
                             }
                             Toast.makeText(MainActivity.this, "Đã gửi tin nhắn " + i + " thành công!", Toast.LENGTH_SHORT).show();
-                            Thread.sleep(20000);
+                            Thread.sleep(50000);
                         } else {
                             Toast.makeText(MainActivity.this, "Permission Denined!", Toast.LENGTH_SHORT).show();
                         }
